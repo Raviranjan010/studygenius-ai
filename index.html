@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyGenius AI - AI Study Companion</title>
+  <meta name="description" content="Turn notes and topics into summaries, quizzes, study plans, flashcards, and difficulty insights with Gemini AI.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ["Inter", "ui-sans-serif", "system-ui"] },
+          colors: {
+            ink: "#070816",
+            panel: "rgba(255,255,255,0.08)",
+            line: "rgba(255,255,255,0.13)",
+            cyan: "#38d6ff",
+            violet: "#9a78ff",
+            royal: "#4c7dff"
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --glass: rgba(255, 255, 255, 0.075);
+      --glass-strong: rgba(255, 255, 255, 0.12);
+      --line: rgba(255, 255, 255, 0.14);
+      --muted: rgba(235, 241, 255, 0.68);
+      --soft: rgba(235, 241, 255, 0.48);
+      --violet: #9a78ff;
+      --blue: #4c7dff;
+      --cyan: #38d6ff;
+      --green: #57e389;
+      --amber: #ffd166;
+      --red: #ff7b91;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 16% 14%, rgba(154, 120, 255, 0.34), transparent 30%),
+        radial-gradient(circle at 88% 20%, rgba(56, 214, 255, 0.22), transparent 28%),
+        radial-gradient(circle at 46% 94%, rgba(76, 125, 255, 0.28), transparent 30%),
+        #070816;
+      color: #f7f8ff;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: -20%;
+      z-index: -2;
+      background:
+        linear-gradient(115deg, rgba(154, 120, 255, 0.24), transparent 28%),
+        linear-gradient(210deg, rgba(56, 214, 255, 0.18), transparent 30%),
+        linear-gradient(330deg, rgba(76, 125, 255, 0.22), transparent 32%);
+      filter: blur(44px);
+      animation: meshMove 18s ease-in-out infinite alternate;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+      background-size: 54px 54px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.75), transparent 82%);
+      pointer-events: none;
+    }
+
+    @keyframes meshMove {
+      0% { transform: translate3d(-2%, -1%, 0) scale(1); }
+      50% { transform: translate3d(2%, 1%, 0) scale(1.04) rotate(1deg); }
+      100% { transform: translate3d(-1%, 2%, 0) scale(1.02) rotate(-1deg); }
+    }
+
+    .glass {
+      background: linear-gradient(145deg, rgba(255,255,255,0.12), rgba(255,255,255,0.055));
+      border: 1px solid var(--line);
+      box-shadow: 0 28px 80px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255,255,255,0.12);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+
+    .soft-glass {
+      background: rgba(255,255,255,0.065);
+      border: 1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .gradient-text {
+      background: linear-gradient(100deg, #ffffff, #c8d5ff 36%, #9beeff 70%, #d8c9ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .accent-text {
+      background: linear-gradient(110deg, var(--violet), var(--cyan));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .mode-btn,
+    .chip,
+    .copy-btn,
+    .primary-btn {
+      transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease, color 180ms ease;
+    }
+
+    .mode-btn:hover,
+    .copy-btn:hover,
+    .primary-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .mode-btn.active {
+      color: #fff;
+      background: linear-gradient(135deg, rgba(154,120,255,0.95), rgba(76,125,255,0.92));
+      border-color: rgba(255,255,255,0.24);
+      box-shadow: 0 16px 38px rgba(92, 83, 255, 0.28);
+    }
+
+    textarea,
+    input,
+    select {
+      background: rgba(7, 8, 22, 0.48);
+      border: 1px solid rgba(255,255,255,0.13);
+      color: #fff;
+      outline: none;
+    }
+
+    textarea:focus,
+    input:focus,
+    select:focus {
+      border-color: rgba(56, 214, 255, 0.58);
+      box-shadow: 0 0 0 4px rgba(56, 214, 255, 0.12);
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      opacity: 0.7;
+    }
+
+    .result-tab.active {
+      color: #fff;
+      background: rgba(255,255,255,0.11);
+      border-color: rgba(255,255,255,0.16);
+    }
+
+    .thinking-mark {
+      width: 62px;
+      height: 62px;
+      position: relative;
+      display: grid;
+      place-items: center;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(154,120,255,0.28), rgba(56,214,255,0.18));
+      border: 1px solid rgba(255,255,255,0.14);
+    }
+
+    .thinking-mark::before,
+    .thinking-mark::after {
+      content: "";
+      position: absolute;
+      border-radius: 999px;
+      inset: -7px;
+      border: 1px solid rgba(56,214,255,0.28);
+      animation: pulseRing 1.6s ease-out infinite;
+    }
+
+    .thinking-mark::after {
+      animation-delay: 0.45s;
+      border-color: rgba(154,120,255,0.28);
+    }
+
+    @keyframes pulseRing {
+      from { opacity: 0.9; transform: scale(0.8); }
+      to { opacity: 0; transform: scale(1.22); }
+    }
+
+    .brain-lines span {
+      display: block;
+      width: 28px;
+      height: 3px;
+      margin: 4px auto;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--violet), var(--cyan));
+      animation: lineThink 1.1s ease-in-out infinite alternate;
+    }
+
+    .brain-lines span:nth-child(2) { width: 36px; animation-delay: 0.12s; }
+    .brain-lines span:nth-child(3) { width: 22px; animation-delay: 0.24s; }
+
+    @keyframes lineThink {
+      from { transform: scaleX(0.72); opacity: 0.5; }
+      to { transform: scaleX(1); opacity: 1; }
+    }
+
+    .toast {
+      animation: toastIn 220ms ease-out both;
+    }
+
+    .toast.leaving {
+      animation: toastOut 220ms ease-in both;
+    }
+
+    @keyframes toastIn {
+      from { transform: translateY(-8px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes toastOut {
+      to { transform: translateY(-8px); opacity: 0; }
+    }
+
+    .answer-panel {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 220ms ease, opacity 180ms ease;
+      opacity: 0;
+    }
+
+    .answer-panel.open {
+      max-height: 260px;
+      opacity: 1;
+    }
+
+    .flashcard {
+      min-height: 190px;
+      perspective: 1000px;
+    }
+
+    .flashcard-inner {
+      position: relative;
+      width: 100%;
+      min-height: 190px;
+      transform-style: preserve-3d;
+      transition: transform 520ms ease;
+    }
+
+    .flashcard.flipped .flashcard-inner {
+      transform: rotateY(180deg);
+    }
+
+    .flash-face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    .flash-back {
+      transform: rotateY(180deg);
+    }
+
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body>
+  <div id="toastHost" class="fixed right-4 top-4 z-50 flex w-[min(360px,calc(100vw-2rem))] flex-col gap-3"></div>
+
+  <main class="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 pb-8 pt-4 sm:px-6 lg:px-8">
+    <nav class="flex items-center justify-between gap-4 py-3">
+      <a href="#" class="flex min-w-0 items-center gap-3" aria-label="StudyGenius AI home">
+        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/15 bg-white/10 shadow-lg shadow-violet-950/30">
+          <svg class="h-6 w-6 text-cyan" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M9 3.8a3.2 3.2 0 0 0-3.15 3.73A3.9 3.9 0 0 0 6.2 15a3.35 3.35 0 0 0 3.18 4.4H11V3.8H9Zm6 0h-2v15.6h1.62A3.35 3.35 0 0 0 17.8 15a3.9 3.9 0 0 0 .35-7.47A3.2 3.2 0 0 0 15 3.8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span class="truncate text-lg font-extrabold tracking-normal sm:text-xl">StudyGenius <span class="accent-text">AI</span></span>
+      </a>
+
+      <div class="flex items-center gap-2">
+        <button id="apiKeyButton" class="soft-glass inline-flex h-10 items-center gap-2 rounded-full px-3 text-sm text-white/75 hover:text-white sm:px-4" type="button">
+          <span id="apiDot" class="h-2.5 w-2.5 rounded-full bg-red-400 shadow-[0_0_12px_rgba(248,113,113,0.8)]"></span>
+          <span class="hidden sm:inline">API key</span>
+        </button>
+        <a href="https://github.com" target="_blank" rel="noreferrer" class="soft-glass hidden h-10 items-center rounded-full px-4 text-sm text-white/70 hover:text-white sm:inline-flex">GitHub</a>
+      </div>
+    </nav>
+
+    <section class="grid flex-1 items-start gap-6 py-7 lg:grid-cols-[0.86fr_1.14fr] lg:py-10">
+      <div class="pt-2 lg:sticky lg:top-6">
+        <div class="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/8 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-cyan/90">
+          <span class="h-1.5 w-1.5 rounded-full bg-cyan shadow-[0_0_14px_rgba(56,214,255,0.9)]"></span>
+          Gemini-powered study workspace
+        </div>
+        <h1 class="mt-6 max-w-3xl text-4xl font-black leading-[1.02] tracking-normal sm:text-5xl lg:text-6xl">
+          <span class="gradient-text">Turn raw notes into polished study systems.</span>
+        </h1>
+        <p class="mt-5 max-w-xl text-base leading-7 text-white/68 sm:text-lg">
+          Generate tiered summaries, adaptive quizzes, exam roadmaps, flashcards, and difficulty insights from any topic or pasted notes.
+        </p>
+
+        <div class="mt-7 grid grid-cols-3 gap-3">
+          <div class="soft-glass rounded-2xl p-4">
+            <p class="text-2xl font-black">5</p>
+            <p class="mt-1 text-xs text-white/55">AI modes</p>
+          </div>
+          <div class="soft-glass rounded-2xl p-4">
+            <p class="text-2xl font-black">1</p>
+            <p class="mt-1 text-xs text-white/55">HTML file</p>
+          </div>
+          <div class="soft-glass rounded-2xl p-4">
+            <p class="text-2xl font-black">24/7</p>
+            <p class="mt-1 text-xs text-white/55">Study help</p>
+          </div>
+        </div>
+      </div>
+
+      <section class="glass rounded-[1.75rem] p-4 sm:p-5 lg:p-6">
+        <div class="hide-scrollbar flex gap-2 overflow-x-auto rounded-2xl border border-white/10 bg-black/18 p-1.5" id="modeTabs" role="tablist" aria-label="Study modes"></div>
+
+        <div class="mt-5 grid gap-4">
+          <div class="grid gap-2">
+            <label for="apiKeyInput" class="text-sm font-semibold text-white/76">Gemini API key</label>
+            <div class="flex flex-col gap-2 sm:flex-row">
+              <input id="apiKeyInput" type="password" autocomplete="off" spellcheck="false" class="min-h-12 flex-1 rounded-2xl px-4 text-sm" placeholder="Paste a Google AI Studio key for testing">
+              <button id="saveApiKey" class="copy-btn rounded-2xl border border-white/12 bg-white/10 px-4 py-3 text-sm font-semibold text-white/82" type="button">Save key</button>
+            </div>
+            <p class="text-xs leading-5 text-white/45">The key is stored only in this browser's localStorage and sent directly to Google's Gemini API.</p>
+          </div>
+
+          <div class="grid gap-3 md:grid-cols-[1fr_220px]">
+            <div class="grid gap-2">
+              <label for="studyInput" class="text-sm font-semibold text-white/76">Notes or topic</label>
+              <textarea id="studyInput" class="min-h-[180px] resize-y rounded-3xl p-4 text-[15px] leading-7" placeholder="Paste notes, an article, lecture transcript, or type a study topic..."></textarea>
+            </div>
+            <div class="grid gap-3">
+              <div class="grid gap-2">
+                <label for="focusInput" class="text-sm font-semibold text-white/76">Focus</label>
+                <input id="focusInput" type="text" class="min-h-12 rounded-2xl px-4 text-sm" placeholder="Optional">
+              </div>
+              <div class="grid gap-2">
+                <label for="examDate" class="text-sm font-semibold text-white/76">Exam date</label>
+                <input id="examDate" type="date" class="min-h-12 rounded-2xl px-4 text-sm">
+              </div>
+              <div class="grid gap-2">
+                <label for="levelSelect" class="text-sm font-semibold text-white/76">Learner level</label>
+                <select id="levelSelect" class="min-h-12 rounded-2xl px-4 text-sm">
+                  <option>Adaptive</option>
+                  <option>Beginner</option>
+                  <option>Intermediate</option>
+                  <option>Advanced</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <button id="generateButton" class="primary-btn relative min-h-14 overflow-hidden rounded-2xl bg-gradient-to-r from-violet via-royal to-cyan px-5 text-base font-extrabold text-white shadow-2xl shadow-blue-950/35 disabled:cursor-not-allowed disabled:opacity-60" type="button">
+            <span class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full"></span>
+            <span id="generateLabel">Generate Summary</span>
+          </button>
+
+          <div id="progressShell" class="hidden h-2 overflow-hidden rounded-full bg-white/8">
+            <div id="progressBar" class="h-full w-0 rounded-full bg-gradient-to-r from-violet via-royal to-cyan transition-all duration-300"></div>
+          </div>
+        </div>
+
+        <section id="resultsShell" class="mt-6 hidden">
+          <div class="mb-3 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+            <div>
+              <p class="text-xs font-bold uppercase tracking-[0.22em] text-cyan/80">Results</p>
+              <h2 id="resultTitle" class="mt-1 text-2xl font-black tracking-normal">Your study material</h2>
+            </div>
+            <button id="copyButton" class="copy-btn inline-flex h-10 items-center justify-center rounded-full border border-white/12 bg-white/10 px-4 text-sm font-semibold text-white/75" type="button">Copy output</button>
+          </div>
+
+          <div id="resultTabs" class="hide-scrollbar mb-4 flex gap-2 overflow-x-auto"></div>
+          <div id="resultContent" class="grid gap-4"></div>
+        </section>
+      </section>
+    </section>
+
+    <footer class="flex flex-col items-center justify-between gap-3 border-t border-white/10 py-5 text-sm text-white/45 sm:flex-row">
+      <p>StudyGenius AI - powered by Google Gemini</p>
+      <div class="flex gap-4">
+        <a class="text-cyan/80 hover:text-cyan" href="https://github.com" target="_blank" rel="noreferrer">GitHub</a>
+        <a class="text-cyan/80 hover:text-cyan" href="#" id="demoLink">Demo</a>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    const MODES = [
+      { id: "summary", label: "Summary", short: "Summarize", action: "Generate Summary" },
+      { id: "quiz", label: "Quiz", short: "Quiz", action: "Generate Quiz" },
+      { id: "plan", label: "Plan", short: "Plan", action: "Build Study Plan" },
+      { id: "flashcards", label: "Flashcards", short: "Cards", action: "Create Flashcards" },
+      { id: "difficulty", label: "Difficulty", short: "Analyze", action: "Analyze Difficulty" }
+    ];
+
+    const MODEL_CANDIDATES = [
+      "gemini-1.5-flash",
+      "gemini-1.5-flash-latest",
+      "gemini-2.0-flash",
+      "gemini-2.0-flash-lite",
+      "gemini-1.5-pro",
+      "gemini-pro"
+    ];
+    const API_VERSIONS = ["v1beta", "v1"];
+
+    const state = {
+      mode: "summary",
+      apiKey: localStorage.getItem("studygenius_gemini_key") || "",
+      generating: false,
+      cachedModel: null,
+      cachedKey: null,
+      lastData: null,
+      activeResult: "summary"
+    };
+
+    const els = {};
+
+    document.addEventListener("DOMContentLoaded", () => {
+      [
+        "modeTabs", "apiKeyInput", "apiKeyButton", "apiDot", "saveApiKey", "studyInput",
+        "focusInput", "examDate", "levelSelect", "generateButton", "generateLabel",
+        "progressShell", "progressBar", "resultsShell", "resultTitle", "resultTabs",
+        "resultContent", "copyButton", "toastHost", "demoLink"
+      ].forEach(id => els[id] = document.getElementById(id));
+
+      els.apiKeyInput.value = state.apiKey;
+      renderModeTabs();
+      setMode("summary");
+      updateApiState();
+
+      els.saveApiKey.addEventListener("click", saveApiKey);
+      els.apiKeyButton.addEventListener("click", () => els.apiKeyInput.focus());
+      els.apiKeyInput.addEventListener("keydown", event => {
+        if (event.key === "Enter") saveApiKey();
+      });
+      els.generateButton.addEventListener("click", generate);
+      els.copyButton.addEventListener("click", copyOutput);
+      els.demoLink.addEventListener("click", event => {
+        event.preventDefault();
+        fillDemo();
+      });
+    });
+
+    function renderModeTabs() {
+      els.modeTabs.innerHTML = MODES.map(mode => `
+        <button class="mode-btn min-w-[112px] flex-1 rounded-xl border border-transparent px-3 py-3 text-sm font-bold text-white/62 hover:bg-white/8 hover:text-white sm:min-w-0" type="button" data-mode="${mode.id}" role="tab">
+          <span class="block sm:hidden">${mode.short}</span>
+          <span class="hidden sm:block">${mode.label}</span>
+        </button>
+      `).join("");
+
+      els.modeTabs.querySelectorAll("button").forEach(button => {
+        button.addEventListener("click", () => setMode(button.dataset.mode));
+      });
+    }
+
+    function setMode(modeId) {
+      state.mode = modeId;
+      const mode = MODES.find(item => item.id === modeId);
+      els.generateLabel.textContent = mode.action;
+
+      els.modeTabs.querySelectorAll("button").forEach(button => {
+        button.classList.toggle("active", button.dataset.mode === modeId);
+        button.setAttribute("aria-selected", button.dataset.mode === modeId ? "true" : "false");
+      });
+
+      const placeholders = {
+        summary: "Paste notes, an article, or a topic to receive TLDR, detailed summary, and key concepts...",
+        quiz: "Paste notes or enter a topic to generate MCQ, true/false, and fill-in-the-blank questions...",
+        plan: "Enter your exam subject or topic. Add an exam date for a timed day-by-day roadmap...",
+        flashcards: "Paste notes or enter a topic to create interactive flip flashcards...",
+        difficulty: "Enter a topic or paste material to analyze complexity, prerequisites, and study time..."
+      };
+      els.studyInput.placeholder = placeholders[modeId];
+
+      if (state.lastData) {
+        renderResults(state.lastData, modeId);
+      }
+    }
+
+    function saveApiKey() {
+      const value = els.apiKeyInput.value.trim();
+      if (!value) {
+        toast("Add a Gemini API key before generating.", "error");
+        return;
+      }
+      state.apiKey = value;
+      state.cachedModel = null;
+      state.cachedKey = null;
+      localStorage.setItem("studygenius_gemini_key", value);
+      updateApiState();
+      toast("API key saved.", "success");
+    }
+
+    function updateApiState() {
+      const hasKey = Boolean(state.apiKey);
+      els.apiDot.className = hasKey
+        ? "h-2.5 w-2.5 rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,0.85)]"
+        : "h-2.5 w-2.5 rounded-full bg-red-400 shadow-[0_0_12px_rgba(248,113,113,0.8)]";
+    }
+
+    async function generate() {
+      if (state.generating) return;
+
+      const input = els.studyInput.value.trim();
+      state.apiKey = els.apiKeyInput.value.trim();
+
+      if (!state.apiKey) {
+        toast("Enter a Gemini API key so the app can call AI.", "error");
+        els.apiKeyInput.focus();
+        return;
+      }
+      if (!input) {
+        toast("Add notes or a study topic first.", "error");
+        els.studyInput.focus();
+        return;
+      }
+
+      localStorage.setItem("studygenius_gemini_key", state.apiKey);
+      updateApiState();
+      state.generating = true;
+      setLoading(true);
+
+      const progressTimer = animateProgress();
+      renderThinking();
+
+      try {
+        const prompt = buildPrompt(input);
+        const data = await callGemini(prompt);
+        clearInterval(progressTimer);
+        els.progressBar.style.width = "100%";
+        state.lastData = normalizeResponse(data);
+        renderResults(state.lastData, state.mode);
+        toast("Study material generated.", "success");
+      } catch (error) {
+        clearInterval(progressTimer);
+        renderError(error);
+        toast(readableError(error), "error");
+      } finally {
+        state.generating = false;
+        setTimeout(() => setLoading(false), 700);
+      }
+    }
+
+    function setLoading(isLoading) {
+      els.generateButton.disabled = isLoading;
+      els.generateLabel.textContent = isLoading ? "Gemini is thinking..." : MODES.find(item => item.id === state.mode).action;
+      els.progressShell.classList.toggle("hidden", !isLoading);
+      if (!isLoading) els.progressBar.style.width = "0%";
+    }
+
+    function animateProgress() {
+      let progress = 9;
+      els.progressBar.style.width = progress + "%";
+      return setInterval(() => {
+        progress = Math.min(92, progress + Math.random() * 13);
+        els.progressBar.style.width = progress + "%";
+      }, 380);
+    }
+
+    function buildPrompt(input) {
+      const focus = els.focusInput.value.trim();
+      const examDate = els.examDate.value;
+      const level = els.levelSelect.value;
+      const context = [
+        `Learner level: ${level}.`,
+        focus ? `Specific focus: ${focus}.` : "",
+        examDate ? `Exam date: ${examDate}.` : ""
+      ].filter(Boolean).join("\\n");
+
+      const jsonRule = "Return only valid JSON. Do not use markdown fences. Adapt difficulty and wording to the learner level.";
+
+      const prompts = {
+        summary: `${jsonRule}
+Create a premium study summary with this exact shape:
+{
+  "summary": {
+    "tldr": "1-2 sentence concise overview",
+    "detailed": ["paragraph 1", "paragraph 2", "paragraph 3"],
+    "keyConcepts": ["concept", "concept", "concept", "concept", "concept"],
+    "nextSteps": ["study action", "study action", "study action"]
+  },
+  "difficulty": {"level":"easy|medium|hard","score":55,"reason":"short reason"}
+}
+${context}
+Source material:
+${input}`,
+
+        quiz: `${jsonRule}
+Create a balanced quiz with MCQ, true/false, and fill-in-the-blank questions using this exact shape:
+{
+  "quiz": [
+    {"type":"mcq","question":"...","options":["...","...","...","..."],"answer":"exact option text","explanation":"..."},
+    {"type":"true_false","question":"...","options":["True","False"],"answer":"True","explanation":"..."},
+    {"type":"fill_blank","question":"... ___ ...","options":[],"answer":"...","explanation":"..."}
+  ],
+  "difficulty": {"level":"easy|medium|hard","score":55,"reason":"short reason"}
+}
+Make 8 total questions.
+${context}
+Source material:
+${input}`,
+
+        plan: `${jsonRule}
+Build a day-by-day study roadmap. If no exam date is provided, create a focused 7-day plan. Use this exact shape:
+{
+  "plan": {
+    "title":"Study Plan: ...",
+    "totalDays":7,
+    "days":[
+      {"day":1,"title":"...","duration":"2 hours","tasks":["...","...","..."],"checkpoint":"..."}
+    ],
+    "finalReview":"..."
+  },
+  "difficulty": {"level":"easy|medium|hard","score":55,"reason":"short reason"}
+}
+${context}
+Topic or source material:
+${input}`,
+
+        flashcards: `${jsonRule}
+Create interactive flashcards using this exact shape:
+{
+  "flashcards": [
+    {"front":"Question or term","back":"Answer or explanation","tag":"concept"}
+  ],
+  "difficulty": {"level":"easy|medium|hard","score":55,"reason":"short reason"}
+}
+Make 10 cards.
+${context}
+Source material:
+${input}`,
+
+        difficulty: `${jsonRule}
+Analyze complexity using this exact shape:
+{
+  "analysis": {
+    "topic":"...",
+    "breakdown":["paragraph 1","paragraph 2"],
+    "factors":["...","...","..."],
+    "prerequisites":["...","..."],
+    "estimatedStudyHours":8,
+    "tips":["...","...","..."]
+  },
+  "difficulty": {"level":"easy|medium|hard","score":55,"reason":"short reason"}
+}
+${context}
+Topic or source material:
+${input}`
+      };
+
+      return prompts[state.mode];
+    }
+
+    async function callGemini(prompt) {
+      if (state.cachedKey !== state.apiKey) {
+        state.cachedModel = null;
+        state.cachedKey = state.apiKey;
+      }
+
+      if (state.cachedModel) {
+        const cachedResponse = await tryGenerate(state.cachedModel.model, state.cachedModel.version, prompt);
+        if (cachedResponse) return parseGeminiResponse(cachedResponse);
+        state.cachedModel = null;
+      }
+
+      const discovered = await discoverModel();
+      if (discovered) {
+        const response = await tryGenerate(discovered.model, discovered.version, prompt);
+        if (response) {
+          state.cachedModel = discovered;
+          return parseGeminiResponse(response);
+        }
+      }
+
+      for (const model of MODEL_CANDIDATES) {
+        for (const version of API_VERSIONS) {
+          const response = await tryGenerate(model, version, prompt);
+          if (response) {
+            state.cachedModel = { model, version };
+            return parseGeminiResponse(response);
+          }
+        }
+      }
+
+      throw new Error("No compatible Gemini text model was found for this key.");
+    }
+
+    async function discoverModel() {
+      for (const version of API_VERSIONS) {
+        const url = `https://generativelanguage.googleapis.com/${version}/models?key=${encodeURIComponent(state.apiKey)}`;
+        try {
+          const response = await fetch(url);
+          if (!response.ok) {
+            if ([400, 401, 403].includes(response.status)) await throwApiError(response);
+            continue;
+          }
+          const data = await response.json();
+          const available = (data.models || [])
+            .filter(model => (model.supportedGenerationMethods || []).includes("generateContent"))
+            .map(model => model.name.replace("models/", ""));
+
+          for (const candidate of MODEL_CANDIDATES) {
+            if (available.includes(candidate)) return { model: candidate, version };
+          }
+
+          const flashModel = available.find(name => name.includes("flash"));
+          if (flashModel) return { model: flashModel, version };
+          if (available[0]) return { model: available[0], version };
+        } catch (error) {
+          if (isFatalApiError(error)) throw error;
+        }
+      }
+      return null;
+    }
+
+    async function tryGenerate(model, version, prompt) {
+      const url = `https://generativelanguage.googleapis.com/${version}/models/${model}:generateContent?key=${encodeURIComponent(state.apiKey)}`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.55,
+            topP: 0.9,
+            maxOutputTokens: 8192
+          }
+        })
+      });
+
+      if (response.ok) return response;
+      if (response.status === 404) return null;
+      await throwApiError(response);
+    }
+
+    async function throwApiError(response) {
+      const payload = await response.json().catch(() => ({}));
+      const message = payload?.error?.message || `Gemini API error ${response.status}`;
+      const error = new Error(message);
+      error.status = response.status;
+      throw error;
+    }
+
+    function isFatalApiError(error) {
+      return [400, 401, 403, 429].includes(error.status);
+    }
+
+    async function parseGeminiResponse(response) {
+      const data = await response.json();
+      const text = data?.candidates?.[0]?.content?.parts?.map(part => part.text || "").join("").trim();
+
+      if (!text) {
+        const reason = data?.candidates?.[0]?.finishReason;
+        throw new Error(reason ? `Gemini returned no text. Finish reason: ${reason}.` : "Gemini returned no text.");
+      }
+
+      const cleaned = text.replace(/^```json\\s*/i, "").replace(/^```\\s*/i, "").replace(/```$/i, "").trim();
+      try {
+        return JSON.parse(cleaned);
+      } catch {
+        const match = cleaned.match(/\\{[\\s\\S]*\\}/);
+        if (match) return JSON.parse(match[0]);
+        throw new Error("Gemini returned a response that could not be parsed. Try again.");
+      }
+    }
+
+    function normalizeResponse(data) {
+      const difficulty = data.difficulty || {};
+      difficulty.level = String(difficulty.level || data.difficultyLevel || "medium").toLowerCase();
+      difficulty.score = clamp(Number(difficulty.score || data.difficultyScore || 55), 1, 100);
+      difficulty.reason = difficulty.reason || "Estimated from concept density and prerequisite depth.";
+      data.difficulty = difficulty;
+      return data;
+    }
+
+    function renderThinking() {
+      els.resultsShell.classList.remove("hidden");
+      els.resultTitle.textContent = "Building your study material";
+      els.resultTabs.innerHTML = "";
+      els.resultContent.innerHTML = `
+        <div class="soft-glass grid place-items-center rounded-3xl p-10 text-center">
+          <div class="thinking-mark">
+            <div class="brain-lines" aria-hidden="true"><span></span><span></span><span></span></div>
+          </div>
+          <h3 class="mt-6 text-xl font-black">AI thinking in progress</h3>
+          <p class="mt-2 max-w-md text-sm leading-6 text-white/58">Gemini is structuring the material, checking difficulty, and formatting the output for quick studying.</p>
+        </div>
+      `;
+    }
+
+    function renderResults(data, preferredTab) {
+      els.resultsShell.classList.remove("hidden");
+      const tabs = availableTabs(data);
+      state.activeResult = tabs.some(tab => tab.id === preferredTab) ? preferredTab : tabs[0].id;
+      els.resultTabs.innerHTML = tabs.map(tab => `
+        <button class="result-tab rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white/60" type="button" data-tab="${tab.id}">${tab.label}</button>
+      `).join("");
+      els.resultTabs.querySelectorAll("button").forEach(button => {
+        button.addEventListener("click", () => {
+          state.activeResult = button.dataset.tab;
+          renderActiveTab(data);
+        });
+      });
+      renderActiveTab(data);
+    }
+
+    function availableTabs(data) {
+      const tabs = [];
+      if (data.summary) tabs.push({ id: "summary", label: "Summary" });
+      if (data.quiz) tabs.push({ id: "quiz", label: "Quiz" });
+      if (data.plan) tabs.push({ id: "plan", label: "Plan" });
+      if (data.flashcards) tabs.push({ id: "flashcards", label: "Flashcards" });
+      if (data.analysis) tabs.push({ id: "difficulty", label: "Difficulty" });
+      if (!tabs.length) tabs.push({ id: "raw", label: "Output" });
+      return tabs;
+    }
+
+    function renderActiveTab(data) {
+      els.resultTabs.querySelectorAll("button").forEach(button => {
+        button.classList.toggle("active", button.dataset.tab === state.activeResult);
+      });
+
+      const titleMap = {
+        summary: "Smart Summary",
+        quiz: "Generated Quiz",
+        plan: data.plan?.title || "Study Plan",
+        flashcards: "Flip Flashcards",
+        difficulty: "Difficulty Analysis",
+        raw: "AI Output"
+      };
+      els.resultTitle.textContent = titleMap[state.activeResult] || "Your study material";
+
+      const difficulty = renderDifficulty(data.difficulty);
+      const renderers = {
+        summary: () => renderSummary(data.summary, difficulty),
+        quiz: () => renderQuiz(data.quiz, difficulty),
+        plan: () => renderPlan(data.plan, difficulty),
+        flashcards: () => renderFlashcards(data.flashcards, difficulty),
+        difficulty: () => renderDifficultyAnalysis(data.analysis, difficulty),
+        raw: () => `<pre class="soft-glass overflow-auto rounded-3xl p-5 text-sm text-white/72">${escapeHtml(JSON.stringify(data, null, 2))}</pre>`
+      };
+      els.resultContent.innerHTML = (renderers[state.activeResult] || renderers.raw)();
+      wireResultInteractions();
+    }
+
+    function renderDifficulty(difficulty = {}) {
+      const level = String(difficulty.level || "medium").toLowerCase();
+      const score = clamp(Number(difficulty.score || 55), 1, 100);
+      const color = level === "easy" ? "var(--green)" : level === "hard" ? "var(--red)" : "var(--amber)";
+      return `
+        <div class="soft-glass rounded-3xl p-4">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div class="min-w-[150px]">
+              <p class="text-xs font-bold uppercase tracking-[0.18em] text-white/42">Difficulty</p>
+              <p class="mt-1 text-lg font-black" style="color:${color}">${score}% ${capitalize(level)}</p>
+            </div>
+            <div class="h-2 flex-1 overflow-hidden rounded-full bg-white/8">
+              <div class="h-full rounded-full" style="width:${score}%;background:linear-gradient(90deg,var(--violet),${color})"></div>
+            </div>
+          </div>
+          <p class="mt-3 text-sm leading-6 text-white/58">${escapeHtml(difficulty.reason || "Complexity estimated by Gemini.")}</p>
+        </div>
+      `;
+    }
+
+    function renderSummary(summary = {}, difficulty) {
+      const detailed = Array.isArray(summary.detailed) ? summary.detailed : [summary.detailed].filter(Boolean);
+      const concepts = summary.keyConcepts || summary.concepts || [];
+      const nextSteps = summary.nextSteps || [];
+      return `
+        ${difficulty}
+        <article class="soft-glass rounded-3xl p-5">
+          <p class="text-xs font-bold uppercase tracking-[0.18em] text-cyan/80">TLDR</p>
+          <p class="mt-2 text-lg font-bold leading-7">${escapeHtml(summary.tldr || "No TLDR returned.")}</p>
+        </article>
+        <article class="soft-glass rounded-3xl p-5">
+          <p class="text-xs font-bold uppercase tracking-[0.18em] text-cyan/80">Detailed</p>
+          <div class="mt-3 grid gap-3 text-sm leading-7 text-white/68">${detailed.map(item => `<p>${escapeHtml(item)}</p>`).join("")}</div>
+        </article>
+        <article class="soft-glass rounded-3xl p-5">
+          <p class="text-xs font-bold uppercase tracking-[0.18em] text-cyan/80">Key Concepts</p>
+          <div class="mt-3 flex flex-wrap gap-2">${concepts.map(item => `<span class="chip rounded-full border border-cyan/20 bg-cyan/10 px-3 py-1.5 text-sm font-semibold text-cyan/90">${escapeHtml(item)}</span>`).join("")}</div>
+        </article>
+        ${nextSteps.length ? `<article class="soft-glass rounded-3xl p-5"><p class="text-xs font-bold uppercase tracking-[0.18em] text-cyan/80">Next Steps</p><ul class="mt-3 grid gap-2 text-sm leading-6 text-white/68">${nextSteps.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul></article>` : ""}
+      `;
+    }
+
+    function renderQuiz(quiz = [], difficulty) {
+      return `
+        ${difficulty}
+        <div class="grid gap-4">
+          ${quiz.map((item, index) => {
+            const options = item.options || [];
+            return `
+              <article class="soft-glass rounded-3xl p-5">
+                <div class="mb-3 flex items-center justify-between gap-3">
+                  <span class="rounded-full border border-violet/25 bg-violet/12 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-violet/90">${labelType(item.type)}</span>
+                  <span class="text-xs font-semibold text-white/42">Question ${index + 1}</span>
+                </div>
+                <h3 class="text-base font-bold leading-7">${escapeHtml(item.question || "")}</h3>
+                ${options.length ? `<div class="mt-4 grid gap-2">${options.map(option => `<button class="quiz-option rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left text-sm text-white/72 hover:border-cyan/30 hover:bg-cyan/10" type="button" data-answer="${escapeAttr(item.answer)}">${escapeHtml(option)}</button>`).join("")}</div>` : ""}
+                ${!options.length ? `<button class="show-answer mt-4 rounded-2xl border border-white/12 bg-white/8 px-4 py-3 text-sm font-bold text-white/75" type="button">Show answer</button>` : ""}
+                <div class="answer-panel mt-3 rounded-2xl border border-emerald-300/18 bg-emerald-300/8 p-4 text-sm leading-6 text-emerald-100">
+                  <strong>Answer:</strong> ${escapeHtml(item.answer || "")}<br>
+                  <span class="text-white/62">${escapeHtml(item.explanation || "")}</span>
+                </div>
+              </article>
+            `;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    function renderPlan(plan = {}, difficulty) {
+      const days = plan.days || [];
+      return `
+        ${difficulty}
+        <div class="grid gap-4">
+          ${days.map(day => `
+            <article class="soft-glass grid gap-4 rounded-3xl p-5 sm:grid-cols-[58px_1fr]">
+              <div class="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-violet to-royal text-sm font-black">D${escapeHtml(day.day || "")}</div>
+              <div>
+                <div class="flex flex-col justify-between gap-1 sm:flex-row sm:items-start">
+                  <h3 class="text-lg font-black">${escapeHtml(day.title || "")}</h3>
+                  <span class="text-sm font-semibold text-cyan/80">${escapeHtml(day.duration || "")}</span>
+                </div>
+                <ul class="mt-3 grid gap-2 text-sm leading-6 text-white/68">${(day.tasks || []).map(task => `<li>${escapeHtml(task)}</li>`).join("")}</ul>
+                ${day.checkpoint ? `<p class="mt-3 rounded-2xl border border-cyan/18 bg-cyan/8 p-3 text-sm text-cyan/90">${escapeHtml(day.checkpoint)}</p>` : ""}
+              </div>
+            </article>
+          `).join("")}
+          ${plan.finalReview ? `<article class="soft-glass rounded-3xl p-5"><p class="text-xs font-bold uppercase tracking-[0.18em] text-cyan/80">Final Review</p><p class="mt-2 text-sm leading-7 text-white/68">${escapeHtml(plan.finalReview)}</p></article>` : ""}
+        </div>
+      `;
+    }
+
+    function renderFlashcards(cards = [], difficulty) {
+      return `
+        ${difficulty}
+        <p class="text-sm text-white/52">Tap a card to flip it.</p>
+        <div class="grid gap-4 md:grid-cols-2">
+          ${cards.map((card, index) => `
+            <button class="flashcard text-left" type="button">
+              <span class="flashcard-inner block">
+                <span class="flash-face soft-glass grid rounded-3xl p-5">
+                  <span class="text-xs font-bold uppercase tracking-[0.18em] text-cyan/80">Card ${index + 1}${card.tag ? ` - ${escapeHtml(card.tag)}` : ""}</span>
+                  <span class="mt-5 block text-lg font-black leading-7">${escapeHtml(card.front || "")}</span>
+                  <span class="mt-auto block pt-5 text-xs font-semibold text-white/38">Tap to reveal</span>
+                </span>
+                <span class="flash-face flash-back soft-glass grid rounded-3xl border-cyan/18 p-5">
+                  <span class="text-xs font-bold uppercase tracking-[0.18em] text-cyan/80">Answer</span>
+                  <span class="mt-5 block text-sm leading-7 text-white/74">${escapeHtml(card.back || "")}</span>
+                  <span class="mt-auto block pt-5 text-xs font-semibold text-white/38">Tap to flip back</span>
+                </span>
+              </span>
+            </button>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function renderDifficultyAnalysis(analysis = {}, difficulty) {
+      const breakdown = Array.isArray(analysis.breakdown) ? analysis.breakdown : [analysis.breakdown].filter(Boolean);
+      return `
+        ${difficulty}
+        <article class="soft-glass rounded-3xl p-5">
+          <p class="text-xs font-bold uppercase tracking-[0.18em] text-cyan/80">Analysis</p>
+          <div class="mt-3 grid gap-3 text-sm leading-7 text-white/68">${breakdown.map(item => `<p>${escapeHtml(item)}</p>`).join("")}</div>
+        </article>
+        <article class="soft-glass rounded-3xl p-5">
+          <p class="text-xs font-bold uppercase tracking-[0.18em] text-cyan/80">Complexity Factors</p>
+          <div class="mt-3 flex flex-wrap gap-2">${(analysis.factors || []).map(item => `<span class="chip rounded-full border border-violet/22 bg-violet/12 px-3 py-1.5 text-sm font-semibold text-violet-100">${escapeHtml(item)}</span>`).join("")}</div>
+        </article>
+        <article class="soft-glass rounded-3xl p-5">
+          <p class="text-xs font-bold uppercase tracking-[0.18em] text-cyan/80">Prerequisites</p>
+          <div class="mt-3 flex flex-wrap gap-2">${(analysis.prerequisites || []).map(item => `<span class="chip rounded-full border border-cyan/22 bg-cyan/10 px-3 py-1.5 text-sm font-semibold text-cyan/90">${escapeHtml(item)}</span>`).join("")}</div>
+        </article>
+        <article class="soft-glass rounded-3xl p-5">
+          <p class="text-xs font-bold uppercase tracking-[0.18em] text-cyan/80">Recommended Time</p>
+          <p class="mt-2 text-2xl font-black">${escapeHtml(analysis.estimatedStudyHours || "8")} hours</p>
+          <ul class="mt-4 grid gap-2 text-sm leading-6 text-white/68">${(analysis.tips || []).map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+        </article>
+      `;
+    }
+
+    function wireResultInteractions() {
+      document.querySelectorAll(".quiz-option").forEach(button => {
+        button.addEventListener("click", () => {
+          const card = button.closest("article");
+          const correct = button.dataset.answer;
+          card.querySelectorAll(".quiz-option").forEach(option => {
+            option.disabled = true;
+            if (normalizeAnswer(option.textContent) === normalizeAnswer(correct)) {
+              option.classList.add("border-emerald-300/40", "bg-emerald-300/12", "text-emerald-100");
+            }
+          });
+          if (normalizeAnswer(button.textContent) !== normalizeAnswer(correct)) {
+            button.classList.add("border-red-300/40", "bg-red-300/12", "text-red-100");
+          }
+          card.querySelector(".answer-panel")?.classList.add("open");
+        });
+      });
+
+      document.querySelectorAll(".show-answer").forEach(button => {
+        button.addEventListener("click", () => button.parentElement.querySelector(".answer-panel")?.classList.add("open"));
+      });
+
+      document.querySelectorAll(".flashcard").forEach(card => {
+        card.addEventListener("click", () => card.classList.toggle("flipped"));
+      });
+    }
+
+    function renderError(error) {
+      els.resultsShell.classList.remove("hidden");
+      els.resultTitle.textContent = "Generation needs attention";
+      els.resultTabs.innerHTML = "";
+      els.resultContent.innerHTML = `
+        <div class="soft-glass rounded-3xl border-red-300/20 p-6">
+          <p class="text-lg font-black text-red-100">Could not generate content</p>
+          <p class="mt-2 text-sm leading-6 text-white/62">${escapeHtml(readableError(error))}</p>
+          <p class="mt-4 text-xs leading-5 text-white/42">Check that your Gemini key is valid, the Generative Language API is enabled, and your browser is online.</p>
+        </div>
+      `;
+    }
+
+    async function copyOutput() {
+      const text = els.resultContent.innerText.trim();
+      if (!text) return toast("Nothing to copy yet.", "error");
+      try {
+        await navigator.clipboard.writeText(text);
+        toast("Output copied.", "success");
+      } catch {
+        toast("Clipboard access was blocked by the browser.", "error");
+      }
+    }
+
+    function toast(message, type = "success") {
+      const node = document.createElement("div");
+      const tone = type === "error" ? "border-red-300/25 bg-red-950/70" : "border-emerald-300/25 bg-emerald-950/60";
+      node.className = `toast rounded-2xl border ${tone} px-4 py-3 text-sm font-semibold text-white shadow-2xl shadow-black/30 backdrop-blur`;
+      node.textContent = message;
+      els.toastHost.appendChild(node);
+      setTimeout(() => {
+        node.classList.add("leaving");
+        setTimeout(() => node.remove(), 240);
+      }, 3200);
+    }
+
+    function readableError(error) {
+      const message = error?.message || "Something went wrong.";
+      if (/API key not valid|invalid api key|API_KEY_INVALID/i.test(message)) return "That Gemini API key looks invalid. Paste a valid key from Google AI Studio.";
+      if (error?.status === 403 || /permission|forbidden/i.test(message)) return "This key does not have permission to use Gemini. Enable the Generative Language API or try another key.";
+      if (error?.status === 429 || /quota|rate/i.test(message)) return "The key hit a quota or rate limit. Wait a moment or test with another key.";
+      if (/Failed to fetch|NetworkError/i.test(message)) return "The browser could not reach Gemini. Check internet access or browser restrictions.";
+      return message;
+    }
+
+    function fillDemo() {
+      els.studyInput.value = "Photosynthesis is the process plants use to convert light energy into chemical energy. Chlorophyll absorbs light, mostly from the blue and red parts of the spectrum. In the light-dependent reactions, water is split and oxygen is released. The Calvin cycle uses carbon dioxide and energy carriers to produce glucose. Factors such as light intensity, carbon dioxide concentration, and temperature affect the rate of photosynthesis.";
+      els.focusInput.value = "Exam revision";
+      toast("Demo topic loaded.", "success");
+    }
+
+    function labelType(type = "") {
+      const map = { mcq: "Multiple choice", true_false: "True / False", tf: "True / False", fill_blank: "Fill blank", fib: "Fill blank" };
+      return map[type] || type.replaceAll("_", " ") || "Question";
+    }
+
+    function normalizeAnswer(value = "") {
+      return String(value).trim().toLowerCase().replace(/^[a-d][).]\\s*/, "");
+    }
+
+    function capitalize(value = "") {
+      return value ? value.charAt(0).toUpperCase() + value.slice(1) : "";
+    }
+
+    function clamp(number, min, max) {
+      return Math.max(min, Math.min(max, Number.isFinite(number) ? number : min));
+    }
+
+    function escapeHtml(value = "") {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function escapeAttr(value = "") {
+      return escapeHtml(value).replaceAll("`", "&#096;");
+    }
+  </script>
+</body>
+</html>
